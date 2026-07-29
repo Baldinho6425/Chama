@@ -48,9 +48,15 @@ Para instalar como app no celular: acesse a URL do frontend pelo navegador (Chro
 
 > **Importante:** navegadores só permitem notificação push em contexto seguro (`https://` ou `localhost`). Para testar em outro aparelho na mesma rede (ex: celular acessando o IP do PC), o site precisa estar atrás de HTTPS — funciona só em `localhost` no próprio PC até fazer o deploy.
 
-## Login
+## Login e papéis
 
-Cada pessoa cria sua própria conta (nome, email, senha) na primeira vez que acessa. Não existe usuário "admin" separado — a demanda guarda quem a criou.
+Cada pessoa cria sua própria conta (nome, email, senha) na primeira vez que acessa — a demanda guarda quem a criou.
+
+Toda conta nasce com papel `comum`. Um **supervisor** (promovido diretamente no banco a primeira vez, depois pela própria aba "Usuários") tem acesso extra a:
+- Aba "Usuários": promover/rebaixar outras contas e ativar/inativar (usuário inativo não consegue logar — inclusive sessões já abertas são cortadas na próxima requisição — e some da lista de "atribuir responsável").
+- Um supervisor não consegue se auto-inativar nem se auto-rebaixar, pra evitar ficar sem acesso por engano.
+
+O Painel de estatísticas continua visível para todos os usuários, não só supervisores.
 
 ## API
 
@@ -59,7 +65,9 @@ Todas as rotas exigem o header `Authorization: Bearer <token>` (obtido no login)
 - `POST /api/auth/registrar` — cria conta (`nome`, `email`, `senha`), retorna `{ usuario, token }`
 - `POST /api/auth/login` — autentica (`email`, `senha`), retorna `{ usuario, token }`
 - `GET /api/auth/me` — dados do usuário autenticado
-- `GET /api/usuarios` — lista usuários (`id`, `nome`), usado pra atribuir responsável
+- `GET /api/usuarios` — lista usuários ativos (`id`, `nome`), usado pra atribuir responsável
+- `GET /api/usuarios/gerenciar` — **supervisor**: lista completa de usuários (`papel`, `ativo`, `email`, etc.)
+- `PATCH /api/usuarios/:id` — **supervisor**: atualiza `papel` e/ou `ativo` de um usuário
 - `GET /api/demandas` — lista demandas (aceita `?status=pendente|em_andamento|concluida`)
 - `POST /api/demandas` — cria demanda (`bloco`, `sala`, `observacoes`, `prioridade` opcional: baixa/normal/urgente)
 - `PATCH /api/demandas/:id` — edita campos, status, prioridade e/ou `responsavelId` (número ou `null` pra remover)
@@ -100,5 +108,5 @@ Deploy atual:
 
 - Restringir o CORS ao domínio do frontend (hoje aceita qualquer origem)
 - Fluxo de recuperação de senha
-- Papéis de usuário / permissões (ex: só quem criou ou é responsável pode excluir a demanda)
 - Anexar foto na demanda
+- Exportar demandas em CSV
