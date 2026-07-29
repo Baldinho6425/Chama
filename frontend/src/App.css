@@ -446,7 +446,9 @@
 }
 
 .demanda-card-urgente {
+  border-left-width: 6px;
   border-left-color: var(--urgente-text);
+  background: color-mix(in srgb, var(--urgente-bg) 18%, var(--surface));
 }
 
 .demanda-card:hover {
