@@ -1,50 +1,27 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { pool } from "./db.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = path.join(__dirname, "..", "data");
-const dataFile = path.join(dataDir, "salas.json");
-
-function ensureDataFile() {
-  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-  if (!fs.existsSync(dataFile)) fs.writeFileSync(dataFile, "[]", "utf-8");
+export async function listarSalas() {
+  const { rows } = await pool.query("SELECT * FROM salas ORDER BY bloco, sala");
+  return rows;
 }
 
-function readAll() {
-  ensureDataFile();
-  return JSON.parse(fs.readFileSync(dataFile, "utf-8"));
-}
-
-function writeAll(salas) {
-  fs.writeFileSync(dataFile, JSON.stringify(salas, null, 2), "utf-8");
-}
-
-export function listarSalas() {
-  return readAll().sort((a, b) => a.bloco.localeCompare(b.bloco) || a.sala.localeCompare(b.sala));
-}
-
-export function existeSala(bloco, sala) {
-  return readAll().some(
-    (s) => s.bloco.toLowerCase() === bloco.toLowerCase() && s.sala.toLowerCase() === sala.toLowerCase()
+export async function existeSala(bloco, sala) {
+  const { rows } = await pool.query(
+    "SELECT 1 FROM salas WHERE lower(bloco) = lower($1) AND lower(sala) = lower($2)",
+    [bloco, sala]
   );
+  return rows.length > 0;
 }
 
-export function criarSala({ bloco, sala }) {
-  const salas = readAll();
-  const proximoId = salas.reduce((max, s) => Math.max(max, s.id), 0) + 1;
-
-  const nova = { id: proximoId, bloco, sala, criado_em: new Date().toISOString() };
-
-  salas.push(nova);
-  writeAll(salas);
-  return nova;
+export async function criarSala({ bloco, sala }) {
+  const { rows } = await pool.query(
+    "INSERT INTO salas (bloco, sala) VALUES ($1, $2) RETURNING *",
+    [bloco, sala]
+  );
+  return rows[0];
 }
 
-export function excluirSala(id) {
-  const salas = readAll();
-  const restantes = salas.filter((s) => s.id !== Number(id));
-  const apagou = restantes.length !== salas.length;
-  if (apagou) writeAll(restantes);
-  return apagou;
+export async function excluirSala(id) {
+  const { rowCount } = await pool.query("DELETE FROM salas WHERE id = $1", [Number(id)]);
+  return rowCount > 0;
 }

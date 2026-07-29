@@ -14,7 +14,8 @@ export async function notificarNovaDemanda(demanda) {
     url: "/",
   });
 
-  const destinatarios = listarSubscricoes().filter((s) => s.usuarioId !== demanda.criado_por_id);
+  const todas = await listarSubscricoes();
+  const destinatarios = todas.filter((s) => s.usuarioId !== demanda.criado_por_id);
 
   await Promise.all(
     destinatarios.map(async (subscricao) => {
@@ -22,7 +23,7 @@ export async function notificarNovaDemanda(demanda) {
         await webpush.sendNotification(subscricao, payload);
       } catch (err) {
         if (err.statusCode === 404 || err.statusCode === 410) {
-          removerSubscricao(subscricao.endpoint);
+          await removerSubscricao(subscricao.endpoint);
         } else {
           console.error("Falha ao enviar push:", err.message);
         }

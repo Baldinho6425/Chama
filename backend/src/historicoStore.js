@@ -1,48 +1,27 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { pool } from "./db.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = path.join(__dirname, "..", "data");
-const dataFile = path.join(dataDir, "historico.json");
-
-function ensureDataFile() {
-  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-  if (!fs.existsSync(dataFile)) fs.writeFileSync(dataFile, "[]", "utf-8");
+export async function listarPorDemanda(demandaId) {
+  const { rows } = await pool.query(
+    "SELECT * FROM historico WHERE demanda_id = $1 ORDER BY criado_em ASC",
+    [Number(demandaId)]
+  );
+  return rows;
 }
 
-function readAll() {
-  ensureDataFile();
-  return JSON.parse(fs.readFileSync(dataFile, "utf-8"));
-}
-
-function writeAll(entradas) {
-  fs.writeFileSync(dataFile, JSON.stringify(entradas, null, 2), "utf-8");
-}
-
-export function listarPorDemanda(demandaId) {
-  return readAll()
-    .filter((e) => e.demanda_id === Number(demandaId))
-    .sort((a, b) => a.criado_em.localeCompare(b.criado_em));
-}
-
-export function adicionarEntrada({ demandaId, usuario, tipo, texto, statusAnterior, statusNovo }) {
-  const entradas = readAll();
-  const proximoId = entradas.reduce((max, e) => Math.max(max, e.id), 0) + 1;
-
-  const nova = {
-    id: proximoId,
-    demanda_id: Number(demandaId),
-    usuario_id: usuario.id,
-    usuario_nome: usuario.nome,
-    tipo,
-    texto: texto ?? null,
-    status_anterior: statusAnterior ?? null,
-    status_novo: statusNovo ?? null,
-    criado_em: new Date().toISOString(),
-  };
-
-  entradas.push(nova);
-  writeAll(entradas);
-  return nova;
+export async function adicionarEntrada({ demandaId, usuario, tipo, texto, statusAnterior, statusNovo }) {
+  const { rows } = await pool.query(
+    `INSERT INTO historico (demanda_id, usuario_id, usuario_nome, tipo, texto, status_anterior, status_novo)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING *`,
+    [
+      Number(demandaId),
+      usuario.id,
+      usuario.nome,
+      tipo,
+      texto ?? null,
+      statusAnterior ?? null,
+      statusNovo ?? null,
+    ]
+  );
+  return rows[0];
 }

@@ -1,55 +1,33 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { pool } from "./db.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = path.join(__dirname, "..", "data");
-const dataFile = path.join(dataDir, "usuarios.json");
-
-function ensureDataFile() {
-  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-  if (!fs.existsSync(dataFile)) fs.writeFileSync(dataFile, "[]", "utf-8");
-}
-
-function readAll() {
-  ensureDataFile();
-  return JSON.parse(fs.readFileSync(dataFile, "utf-8"));
-}
-
-function writeAll(usuarios) {
-  fs.writeFileSync(dataFile, JSON.stringify(usuarios, null, 2), "utf-8");
-}
-
-export function listarUsuarios() {
-  return readAll().map(paraPublico);
-}
-
-export function buscarPorEmail(email) {
-  return readAll().find((u) => u.email === email.toLowerCase());
-}
-
-export function buscarPorId(id) {
-  return readAll().find((u) => u.id === Number(id));
-}
-
-export function criarUsuario({ nome, email, senhaHash }) {
-  const usuarios = readAll();
-  const proximoId = usuarios.reduce((max, u) => Math.max(max, u.id), 0) + 1;
-
-  const novo = {
-    id: proximoId,
-    nome,
-    email: email.toLowerCase(),
-    senhaHash,
-    criado_em: new Date().toISOString(),
-  };
-
-  usuarios.push(novo);
-  writeAll(usuarios);
-  return paraPublico(novo);
-}
-
-export function paraPublico(usuario) {
-  const { senhaHash, ...publico } = usuario;
+function paraPublico(usuario) {
+  const { senha_hash, ...publico } = usuario;
   return publico;
 }
+
+export async function listarUsuarios() {
+  const { rows } = await pool.query("SELECT * FROM usuarios ORDER BY id");
+  return rows.map(paraPublico);
+}
+
+export async function buscarPorEmail(email) {
+  const { rows } = await pool.query("SELECT * FROM usuarios WHERE email = $1", [
+    email.toLowerCase(),
+  ]);
+  return rows[0];
+}
+
+export async function buscarPorId(id) {
+  const { rows } = await pool.query("SELECT * FROM usuarios WHERE id = $1", [Number(id)]);
+  return rows[0];
+}
+
+export async function criarUsuario({ nome, email, senhaHash }) {
+  const { rows } = await pool.query(
+    "INSERT INTO usuarios (nome, email, senha_hash) VALUES ($1, $2, $3) RETURNING *",
+    [nome, email.toLowerCase(), senhaHash]
+  );
+  return paraPublico(rows[0]);
+}
+
+export { paraPublico };

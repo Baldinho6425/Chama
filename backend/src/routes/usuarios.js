@@ -6,6 +6,7 @@ export const usuariosRouter = Router();
 
 usuariosRouter.use(requireAuth);
 
-usuariosRouter.get("/", (req, res) => {
-  res.json(listarUsuarios().map(({ id, nome }) => ({ id, nome })));
+usuariosRouter.get("/", async (req, res) => {
+  const usuarios = await listarUsuarios();
+  res.json(usuarios.map(({ id, nome }) => ({ id, nome })));
 });

@@ -8,21 +8,23 @@ Funciona pelo navegador (celular ou desktop) e pode ser instalado como app (PWA)
 
 ## Estrutura
 
-- `backend/` — API em Node.js/Express. Dados guardados em arquivos JSON em `backend/data/` (demandas, usuários, inscrições de push).
+- `backend/` — API em Node.js/Express. Dados guardados em PostgreSQL (ver `backend/src/db.js` para o schema).
 - `frontend/` — App em React + Vite, com PWA instalável e service worker próprio (para receber notificações push).
 
 ## Como rodar
 
 ### Backend
 
+Precisa de um banco PostgreSQL — recomendado [Neon](https://neon.tech) (gratuito, sem expiração). Crie um projeto lá e copie a connection string.
+
 ```bash
 cd backend
 npm install
-copy .env.example .env   # ajuste JWT_SECRET e as chaves VAPID (veja abaixo)
+copy .env.example .env   # ajuste DATABASE_URL, JWT_SECRET e as chaves VAPID (veja abaixo)
 npm run dev
 ```
 
-Sobe em `http://localhost:3001`.
+Sobe em `http://localhost:3001` e cria as tabelas automaticamente no banco (se ainda não existirem) ao iniciar.
 
 **Gerar as chaves VAPID** (necessárias para notificações push), uma vez só:
 
@@ -52,15 +54,21 @@ Cada pessoa cria sua própria conta (nome, email, senha) na primeira vez que ace
 
 ## API
 
-Todas as rotas de `/api/demandas` e `/api/push` exigem o header `Authorization: Bearer <token>` (obtido no login).
+Todas as rotas exigem o header `Authorization: Bearer <token>` (obtido no login), exceto `/api/auth/registrar`, `/api/auth/login` e `/api/push/vapid-public-key`.
 
 - `POST /api/auth/registrar` — cria conta (`nome`, `email`, `senha`), retorna `{ usuario, token }`
 - `POST /api/auth/login` — autentica (`email`, `senha`), retorna `{ usuario, token }`
 - `GET /api/auth/me` — dados do usuário autenticado
+- `GET /api/usuarios` — lista usuários (`id`, `nome`), usado pra atribuir responsável
 - `GET /api/demandas` — lista demandas (aceita `?status=pendente|em_andamento|concluida`)
 - `POST /api/demandas` — cria demanda (`bloco`, `sala`, `observacoes`, `prioridade` opcional: baixa/normal/urgente)
-- `PATCH /api/demandas/:id` — edita campos e/ou status/prioridade
+- `PATCH /api/demandas/:id` — edita campos, status, prioridade e/ou `responsavelId` (número ou `null` pra remover)
 - `DELETE /api/demandas/:id` — remove demanda
+- `GET /api/demandas/:id/historico` — linha do tempo da demanda (criação, mudanças de status/responsável, comentários)
+- `POST /api/demandas/:id/historico` — adiciona um comentário (`texto`)
+- `GET /api/salas` — lista blocos/salas cadastrados
+- `POST /api/salas` — cadastra uma sala (`bloco`, `sala`)
+- `DELETE /api/salas/:id` — remove uma sala
 - `GET /api/push/vapid-public-key` — chave pública para inscrição de push
 - `POST /api/push/subscribe` — registra inscrição de push do usuário logado
 - `DELETE /api/push/subscribe` — remove inscrição
@@ -77,10 +85,10 @@ Deploy atual:
 
 1. Crie uma conta em [render.com](https://render.com) e conecte seu GitHub.
 2. "New" → "Blueprint" → selecione o repositório `Chama`. O Render lê o `render.yaml` da raiz e configura o serviço `chama-backend` automaticamente (`rootDir: backend`).
-3. Preencha as variáveis de ambiente pedidas: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (gere as chaves como descrito acima). `JWT_SECRET` é gerado automaticamente.
+3. Preencha as variáveis de ambiente pedidas: `DATABASE_URL` (connection string do Neon/Postgres), `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (gere as chaves como descrito acima). `JWT_SECRET` é gerado automaticamente.
 4. Depois do deploy, anote a URL pública (algo como `https://chama-backend.onrender.com`).
 
-> **Atenção:** no plano free do Render, o serviço "dorme" após 15 min sem uso e o disco não é persistente entre reinícios — os dados (`backend/data/*.json`) podem ser perdidos quando isso acontece. Ok pra testar, mas não guarde nada importante até migrar para um banco de dados de verdade.
+> **Atenção:** no plano free do Render, o serviço "dorme" após 15 min sem uso (a próxima requisição demora ~30-50s pra acordar). Isso não afeta mais os dados — com o Postgres, eles ficam salvos independente do Render dormir ou reiniciar.
 
 ### Frontend na Vercel
 
@@ -90,6 +98,7 @@ Deploy atual:
 
 ## Próximos passos sugeridos
 
-- Migrar o armazenamento de arquivos JSON para um banco de dados real (evita perda de dados no Render free e permite rodar 100% na Vercel com funções serverless)
-- Papéis de usuário (ex: só quem solicitou vs. quem atende)
+- Restringir o CORS ao domínio do frontend (hoje aceita qualquer origem)
+- Fluxo de recuperação de senha
+- Papéis de usuário / permissões (ex: só quem criou ou é responsável pode excluir a demanda)
 - Anexar foto na demanda

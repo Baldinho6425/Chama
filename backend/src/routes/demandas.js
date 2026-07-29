@@ -12,9 +12,9 @@ export const demandasRouter = Router();
 
 demandasRouter.use(requireAuth);
 
-demandasRouter.get("/", (req, res) => {
+demandasRouter.get("/", async (req, res) => {
   const { status } = req.query;
-  res.json(listDemandas(status));
+  res.json(await listDemandas(status));
 });
 
 demandasRouter.post("/", async (req, res) => {
@@ -28,7 +28,7 @@ demandasRouter.post("/", async (req, res) => {
     return res.status(400).json({ erro: `prioridade inválida, use: ${PRIORIDADES_VALIDAS.join(", ")}` });
   }
 
-  const demanda = createDemanda({
+  const demanda = await createDemanda({
     bloco: bloco.trim(),
     sala: sala.trim(),
     observacoes: observacoes.trim(),
@@ -36,15 +36,15 @@ demandasRouter.post("/", async (req, res) => {
     criadoPor: req.usuario,
   });
 
-  adicionarEntrada({ demandaId: demanda.id, usuario: req.usuario, tipo: "criacao" });
+  await adicionarEntrada({ demandaId: demanda.id, usuario: req.usuario, tipo: "criacao" });
 
   res.status(201).json(demanda);
   notificarNovaDemanda(demanda).catch((err) => console.error("Erro ao notificar:", err));
 });
 
-demandasRouter.patch("/:id", (req, res) => {
+demandasRouter.patch("/:id", async (req, res) => {
   const { id } = req.params;
-  const existente = getDemanda(id);
+  const existente = await getDemanda(id);
 
   if (!existente) {
     return res.status(404).json({ erro: "demanda não encontrada" });
@@ -74,7 +74,7 @@ demandasRouter.patch("/:id", (req, res) => {
       campos.responsavelId = null;
       campos.responsavelNome = null;
     } else {
-      const usuario = buscarPorId(responsavelId);
+      const usuario = await buscarPorId(responsavelId);
       if (!usuario) {
         return res.status(400).json({ erro: "usuário responsável não encontrado" });
       }
@@ -84,10 +84,10 @@ demandasRouter.patch("/:id", (req, res) => {
     responsavelNovo = campos.responsavelNome;
   }
 
-  const atualizada = updateDemanda(id, campos);
+  const atualizada = await updateDemanda(id, campos);
 
   if (status !== undefined && status !== existente.status) {
-    adicionarEntrada({
+    await adicionarEntrada({
       demandaId: id,
       usuario: req.usuario,
       tipo: "status",
@@ -97,7 +97,7 @@ demandasRouter.patch("/:id", (req, res) => {
   }
 
   if (responsavelId !== undefined && responsavelId !== existente.responsavel_id) {
-    adicionarEntrada({
+    await adicionarEntrada({
       demandaId: id,
       usuario: req.usuario,
       tipo: "responsavel",
@@ -108,8 +108,8 @@ demandasRouter.patch("/:id", (req, res) => {
   res.json(atualizada);
 });
 
-demandasRouter.delete("/:id", (req, res) => {
-  const apagou = deleteDemanda(req.params.id);
+demandasRouter.delete("/:id", async (req, res) => {
+  const apagou = await deleteDemanda(req.params.id);
 
   if (!apagou) {
     return res.status(404).json({ erro: "demanda não encontrada" });
@@ -118,16 +118,16 @@ demandasRouter.delete("/:id", (req, res) => {
   res.status(204).send();
 });
 
-demandasRouter.get("/:id/historico", (req, res) => {
-  if (!getDemanda(req.params.id)) {
+demandasRouter.get("/:id/historico", async (req, res) => {
+  if (!(await getDemanda(req.params.id))) {
     return res.status(404).json({ erro: "demanda não encontrada" });
   }
 
-  res.json(listarPorDemanda(req.params.id));
+  res.json(await listarPorDemanda(req.params.id));
 });
 
-demandasRouter.post("/:id/historico", (req, res) => {
-  if (!getDemanda(req.params.id)) {
+demandasRouter.post("/:id/historico", async (req, res) => {
+  if (!(await getDemanda(req.params.id))) {
     return res.status(404).json({ erro: "demanda não encontrada" });
   }
 
@@ -137,7 +137,7 @@ demandasRouter.post("/:id/historico", (req, res) => {
     return res.status(400).json({ erro: "texto é obrigatório" });
   }
 
-  const entrada = adicionarEntrada({
+  const entrada = await adicionarEntrada({
     demandaId: req.params.id,
     usuario: req.usuario,
     tipo: "comentario",

@@ -1,37 +1,27 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { pool } from "./db.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = path.join(__dirname, "..", "data");
-const dataFile = path.join(dataDir, "subscricoes.json");
-
-function ensureDataFile() {
-  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-  if (!fs.existsSync(dataFile)) fs.writeFileSync(dataFile, "[]", "utf-8");
+function paraSubscricaoWebPush(row) {
+  return {
+    usuarioId: row.usuario_id,
+    endpoint: row.endpoint,
+    keys: { p256dh: row.p256dh, auth: row.auth },
+  };
 }
 
-function readAll() {
-  ensureDataFile();
-  return JSON.parse(fs.readFileSync(dataFile, "utf-8"));
+export async function listarSubscricoes() {
+  const { rows } = await pool.query("SELECT * FROM subscricoes");
+  return rows.map(paraSubscricaoWebPush);
 }
 
-function writeAll(subscricoes) {
-  fs.writeFileSync(dataFile, JSON.stringify(subscricoes, null, 2), "utf-8");
+export async function salvarSubscricao(usuarioId, subscricao) {
+  await pool.query(
+    `INSERT INTO subscricoes (usuario_id, endpoint, p256dh, auth)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (endpoint) DO UPDATE SET usuario_id = $1, p256dh = $3, auth = $4`,
+    [usuarioId, subscricao.endpoint, subscricao.keys.p256dh, subscricao.keys.auth]
+  );
 }
 
-export function listarSubscricoes() {
-  return readAll();
-}
-
-export function salvarSubscricao(usuarioId, subscricao) {
-  const subscricoes = readAll();
-  const semDuplicata = subscricoes.filter((s) => s.endpoint !== subscricao.endpoint);
-  semDuplicata.push({ usuarioId, ...subscricao });
-  writeAll(semDuplicata);
-}
-
-export function removerSubscricao(endpoint) {
-  const subscricoes = readAll();
-  writeAll(subscricoes.filter((s) => s.endpoint !== endpoint));
+export async function removerSubscricao(endpoint) {
+  await pool.query("DELETE FROM subscricoes WHERE endpoint = $1", [endpoint]);
 }

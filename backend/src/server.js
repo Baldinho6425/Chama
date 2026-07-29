@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import { initSchema } from "./db.js";
 import { authRouter } from "./routes/auth.js";
 import { demandasRouter } from "./routes/demandas.js";
 import { pushRouter } from "./routes/push.js";
@@ -20,6 +21,8 @@ app.use("/api/salas", salasRouter);
 app.use("/api/usuarios", usuariosRouter);
 
 app.get("/api/health", (req, res) => res.json({ ok: true }));
+
+await initSchema();
 
 app.listen(PORT, () => {
   console.log(`Chama API rodando em http://localhost:${PORT}`);
