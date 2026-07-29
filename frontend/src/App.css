@@ -793,3 +793,96 @@
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* Usuários (supervisor) */
+
+.secao-usuarios {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.usuarios-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.usuario-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  animation: entrada-suave 0.25s ease;
+}
+
+.usuario-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.usuario-nome {
+  font-weight: 600;
+}
+
+.usuario-voce {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.usuario-email,
+.usuario-data {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.usuario-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.papel-badge,
+.ativo-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.papel-supervisor {
+  background: var(--normal-bg);
+  color: var(--normal-text);
+}
+
+.papel-comum {
+  background: var(--baixa-bg);
+  color: var(--baixa-text);
+}
+
+.ativo-sim {
+  background: var(--concluida-bg);
+  color: var(--concluida-text);
+}
+
+.ativo-nao {
+  background: var(--urgente-bg);
+  color: var(--urgente-text);
+}
+
+.usuario-acoes {
+  display: flex;
+  gap: 8px;
+}

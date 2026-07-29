@@ -4,6 +4,7 @@ import DemandaForm from './components/DemandaForm'
 import DemandaList from './components/DemandaList'
 import SalasManager from './components/SalasManager'
 import Dashboard from './components/Dashboard'
+import UsuariosManager from './components/UsuariosManager'
 import Login from './pages/Login'
 import {
   atualizarDemanda,
@@ -49,13 +50,16 @@ export default function App() {
 }
 
 function AppAutenticado({ usuario, onSair }) {
+  const ehSupervisor = usuario.papel === 'supervisor'
+  const abas = ehSupervisor ? [...ABAS, { id: 'usuarios', rotulo: 'Usuários' }] : ABAS
+
   const [aba, setAba] = useState('demandas')
   const [demandas, setDemandas] = useState([])
   const [salas, setSalas] = useState([])
   const [usuarios, setUsuarios] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
-  const [filtro, setFiltro] = useState('todas')
+  const [filtro, setFiltro] = useState('pendente')
   const [busca, setBusca] = useState('')
   const [ordenacao, setOrdenacao] = useState('recente')
   const [statusPush, setStatusPush] = useState('verificando')
@@ -186,7 +190,7 @@ function AppAutenticado({ usuario, onSair }) {
         )}
 
         <nav className="abas">
-          {ABAS.map((item) => (
+          {abas.map((item) => (
             <button
               key={item.id}
               className={aba === item.id ? 'ativo' : ''}
@@ -260,6 +264,8 @@ function AppAutenticado({ usuario, onSair }) {
         )}
 
         {aba === 'painel' && <Dashboard demandas={demandas} />}
+
+        {aba === 'usuarios' && ehSupervisor && <UsuariosManager />}
       </main>
     </div>
   )

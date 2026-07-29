@@ -17,8 +17,13 @@ export async function initSchema() {
       nome TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
       senha_hash TEXT NOT NULL,
+      papel TEXT NOT NULL DEFAULT 'comum',
+      ativo BOOLEAN NOT NULL DEFAULT true,
       criado_em TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+
+    ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS papel TEXT NOT NULL DEFAULT 'comum';
+    ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ativo BOOLEAN NOT NULL DEFAULT true;
 
     CREATE TABLE IF NOT EXISTS salas (
       id SERIAL PRIMARY KEY,

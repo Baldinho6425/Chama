@@ -87,6 +87,13 @@ button:active:not(:disabled) {
   transform: scale(0.96);
 }
 
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 input,
 textarea,
 select {

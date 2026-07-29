@@ -83,6 +83,14 @@ export function listarUsuarios() {
   return request('/usuarios')
 }
 
+export function listarUsuariosGerenciar() {
+  return request('/usuarios/gerenciar')
+}
+
+export function atualizarUsuario(id, dados) {
+  return request(`/usuarios/${id}`, { method: 'PATCH', body: JSON.stringify(dados) })
+}
+
 // Histórico
 
 export function listarHistorico(demandaId) {

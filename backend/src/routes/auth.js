@@ -42,6 +42,10 @@ authRouter.post("/login", async (req, res) => {
     return res.status(401).json({ erro: "email ou senha inválidos" });
   }
 
+  if (!usuario.ativo) {
+    return res.status(403).json({ erro: "esta conta está inativa" });
+  }
+
   const token = gerarToken(usuario);
   res.json({ usuario: paraPublico(usuario), token });
 });
