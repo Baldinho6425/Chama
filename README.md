@@ -4,6 +4,8 @@ App para cadastro e acompanhamento de demandas de TI, organizadas por sala (Bloc
 
 Funciona pelo navegador (celular ou desktop) e pode ser instalado como app (PWA).
 
+**App no ar:** https://frontend-teal-beta-23.vercel.app
+
 ## Estrutura
 
 - `backend/` — API em Node.js/Express. Dados guardados em arquivos JSON em `backend/data/` (demandas, usuários, inscrições de push).
@@ -66,6 +68,10 @@ Todas as rotas de `/api/demandas` e `/api/push` exigem o header `Authorization: 
 ## Deploy (Vercel + Render)
 
 Setup pensado pra testar rápido fora do localhost — frontend na Vercel, backend no Render.
+
+Deploy atual:
+- Frontend: https://frontend-teal-beta-23.vercel.app
+- Backend: https://chama-backend-a408.onrender.com
 
 ### Backend no Render
 
