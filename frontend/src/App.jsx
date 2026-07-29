@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import DemandaForm from './components/DemandaForm'
 import DemandaList from './components/DemandaList'
 import SalasManager from './components/SalasManager'
 import Dashboard from './components/Dashboard'
 import UsuariosManager from './components/UsuariosManager'
+import Avatar from './components/Avatar'
 import Login from './pages/Login'
 import RedefinirSenha from './pages/RedefinirSenha'
 import {
@@ -35,6 +36,8 @@ const ORDENACOES = [
   { id: 'prioridade', rotulo: 'Prioridade' },
   { id: 'bloco', rotulo: 'Bloco' },
 ]
+
+const ITENS_POR_PAGINA = 6
 
 export default function App() {
   const { usuario, carregando: carregandoSessao, sair } = useAuth()
@@ -69,6 +72,9 @@ function AppAutenticado({ usuario, onSair }) {
   const [busca, setBusca] = useState('')
   const [ordenacao, setOrdenacao] = useState('recente')
   const [statusPush, setStatusPush] = useState('verificando')
+  const [paginaAtual, setPaginaAtual] = useState(1)
+  const [irParaForm, setIrParaForm] = useState(false)
+  const formRef = useRef(null)
 
   async function carregar() {
     setCarregando(true)
@@ -93,6 +99,22 @@ function AppAutenticado({ usuario, onSair }) {
     carregar()
     statusNotificacoes().then(setStatusPush)
   }, [])
+
+  useEffect(() => {
+    setPaginaAtual(1)
+  }, [filtro, busca, ordenacao])
+
+  useEffect(() => {
+    if (aba === 'demandas' && irParaForm) {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setIrParaForm(false)
+    }
+  }, [aba, irParaForm])
+
+  function handleNovaDemandaClick() {
+    setAba('demandas')
+    setIrParaForm(true)
+  }
 
   async function handleCriar(campos) {
     const nova = await criarDemanda(campos)
@@ -167,112 +189,185 @@ function AppAutenticado({ usuario, onSair }) {
       })
   }, [demandas, filtro, busca, ordenacao])
 
+  const totalPaginas = Math.max(1, Math.ceil(demandasFiltradas.length / ITENS_POR_PAGINA))
+
+  const demandasPaginadas = useMemo(
+    () =>
+      demandasFiltradas.slice(
+        (paginaAtual - 1) * ITENS_POR_PAGINA,
+        paginaAtual * ITENS_POR_PAGINA
+      ),
+    [demandasFiltradas, paginaAtual]
+  )
+
   return (
-    <div className="app">
-      <header className="app-header">
-        <div className="app-header-topo">
-          <div>
-            <h1>Chama</h1>
-            <p>Demandas de TI por sala</p>
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="sidebar-marca">
+          <span className="sidebar-logo" aria-hidden="true">
+            🔥
+          </span>
+          <span>Chama</span>
+        </div>
+
+        <button type="button" className="botao-nova-demanda" onClick={handleNovaDemandaClick}>
+          + Nova demanda
+        </button>
+
+        {aba === 'demandas' && (
+          <div className="sidebar-filtros">
+            <h3>Filtros</h3>
+
+            <input
+              type="search"
+              className="campo-busca"
+              placeholder="Buscar demandas…"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+
+            <label className="sidebar-rotulo" htmlFor="ordenacao">
+              Ordenar por
+            </label>
+            <select id="ordenacao" value={ordenacao} onChange={(e) => setOrdenacao(e.target.value)}>
+              {ORDENACOES.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.rotulo}
+                </option>
+              ))}
+            </select>
+
+            <span className="sidebar-rotulo">Status</span>
+            <div className="sidebar-status-lista">
+              {ORDEM_STATUS.map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  className={`sidebar-status-item ${filtro === status ? 'ativo' : ''}`}
+                  onClick={() => setFiltro(status)}
+                >
+                  <span className={`status-ponto ${STATUS[status].classe}`} />
+                  {STATUS[status].rotulo}
+                </button>
+              ))}
+              <button
+                type="button"
+                className={`sidebar-status-item ${filtro === 'todas' ? 'ativo' : ''}`}
+                onClick={() => setFiltro('todas')}
+              >
+                <span className="status-ponto status-ponto-todas" />
+                Todas
+              </button>
+            </div>
           </div>
-          <div className="app-header-usuario">
-            <span>{usuario.nome}</span>
+        )}
+
+        {statusPush !== 'ativo' && (
+          <div className="sidebar-notif-card">
+            <p>Receba notificações sobre atualizações e novos comentários.</p>
+            {statusPush === 'inativo' && (
+              <button type="button" onClick={handleAtivarPush}>
+                Gerenciar notificações
+              </button>
+            )}
+            {statusPush === 'negado' && (
+              <p className="mensagem-aviso">
+                Bloqueadas no navegador. Ative nas configurações do site.
+              </p>
+            )}
+          </div>
+        )}
+      </aside>
+
+      <div className="app-content">
+        <header className="topbar">
+          <nav className="abas">
+            {abas.map((item) => (
+              <button
+                key={item.id}
+                className={aba === item.id ? 'ativo' : ''}
+                onClick={() => setAba(item.id)}
+              >
+                {item.rotulo}
+              </button>
+            ))}
+          </nav>
+
+          <div className="topbar-usuario">
+            {statusPush === 'ativo' && <span className="notif-ativa">🔔 Notificações ativas</span>}
+            <Avatar nome={usuario.nome} tamanho={32} />
+            <div className="topbar-usuario-info">
+              <span>{usuario.nome}</span>
+              {ehSupervisor && <span className="topbar-usuario-papel">Supervisor</span>}
+            </div>
             <button type="button" className="botao-secundario" onClick={onSair}>
               Sair
             </button>
           </div>
-        </div>
+        </header>
 
-        {statusPush === 'inativo' && (
-          <button type="button" className="botao-notificacoes" onClick={handleAtivarPush}>
-            Ativar notificações
-          </button>
-        )}
-        {statusPush === 'negado' && (
-          <p className="mensagem-aviso">
-            Notificações bloqueadas no navegador. Ative nas configurações do site para receber
-            avisos de novas demandas.
-          </p>
-        )}
+        <main className="app-main">
+          {erro && <p className="mensagem-erro">{erro}</p>}
 
-        <nav className="abas">
-          {abas.map((item) => (
-            <button
-              key={item.id}
-              className={aba === item.id ? 'ativo' : ''}
-              onClick={() => setAba(item.id)}
-            >
-              {item.rotulo}
-            </button>
-          ))}
-        </nav>
-      </header>
+          {aba === 'demandas' && (
+            <>
+              <div ref={formRef}>
+                <DemandaForm salas={salas} onCriar={handleCriar} />
+              </div>
 
-      <main className="app-main">
-        {erro && <p className="mensagem-erro">{erro}</p>}
-
-        {aba === 'demandas' && (
-          <>
-            <DemandaForm salas={salas} onCriar={handleCriar} />
-
-            <section className="secao-lista">
-              <div className="controles-lista">
-                <input
-                  type="search"
-                  className="campo-busca"
-                  placeholder="Buscar por bloco, sala ou observação…"
-                  value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
+              <section className="secao-lista">
+                <DemandaList
+                  demandas={demandasPaginadas}
+                  salas={salas}
+                  usuarios={usuarios}
+                  carregando={carregando}
+                  onAtualizarStatus={handleAtualizarStatus}
+                  onAtribuirResponsavel={handleAtribuirResponsavel}
+                  onEditar={handleEditar}
+                  onExcluir={handleExcluir}
                 />
-                <select value={ordenacao} onChange={(e) => setOrdenacao(e.target.value)}>
-                  {ORDENACOES.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.rotulo}
-                    </option>
-                  ))}
-                </select>
-              </div>
 
-              <div className="filtros">
-                {ORDEM_STATUS.map((status) => (
-                  <button
-                    key={status}
-                    className={filtro === status ? 'ativo' : ''}
-                    onClick={() => setFiltro(status)}
-                  >
-                    {STATUS[status].rotulo}
-                  </button>
-                ))}
-                <button
-                  className={filtro === 'todas' ? 'ativo' : ''}
-                  onClick={() => setFiltro('todas')}
-                >
-                  Todas
-                </button>
-              </div>
+                {totalPaginas > 1 && (
+                  <nav className="paginacao" aria-label="Paginação de demandas">
+                    <button
+                      type="button"
+                      disabled={paginaAtual === 1}
+                      onClick={() => setPaginaAtual((p) => p - 1)}
+                    >
+                      ‹
+                    </button>
+                    {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        className={paginaAtual === n ? 'ativo' : ''}
+                        onClick={() => setPaginaAtual(n)}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      disabled={paginaAtual === totalPaginas}
+                      onClick={() => setPaginaAtual((p) => p + 1)}
+                    >
+                      ›
+                    </button>
+                  </nav>
+                )}
+              </section>
+            </>
+          )}
 
-              <DemandaList
-                demandas={demandasFiltradas}
-                salas={salas}
-                usuarios={usuarios}
-                carregando={carregando}
-                onAtualizarStatus={handleAtualizarStatus}
-                onAtribuirResponsavel={handleAtribuirResponsavel}
-                onEditar={handleEditar}
-                onExcluir={handleExcluir}
-              />
-            </section>
-          </>
-        )}
+          {aba === 'salas' && (
+            <SalasManager salas={salas} onCriar={handleCriarSala} onExcluir={handleExcluirSala} />
+          )}
 
-        {aba === 'salas' && (
-          <SalasManager salas={salas} onCriar={handleCriarSala} onExcluir={handleExcluirSala} />
-        )}
+          {aba === 'painel' && <Dashboard demandas={demandas} />}
 
-        {aba === 'painel' && <Dashboard demandas={demandas} />}
-
-        {aba === 'usuarios' && ehSupervisor && <UsuariosManager />}
-      </main>
+          {aba === 'usuarios' && ehSupervisor && <UsuariosManager />}
+        </main>
+      </div>
     </div>
   )
 }

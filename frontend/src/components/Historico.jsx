@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { adicionarComentario, listarHistorico } from '../api'
 import { STATUS } from '../statusDemanda'
 import { formatarData } from '../formatarData'
+import Avatar from './Avatar'
 
 function descreverEntrada(entrada) {
   switch (entrada.tipo) {
@@ -72,16 +73,19 @@ export default function Historico({ demandaId }) {
         <ul className="historico-lista">
           {entradas.map((entrada) => (
             <li key={entrada.id} className="historico-item">
-              {entrada.tipo === 'comentario' ? (
-                <p className="historico-comentario">
-                  <strong>{entrada.usuario_nome}:</strong> {entrada.texto}
-                </p>
-              ) : (
-                <p className="historico-evento">
-                  <strong>{entrada.usuario_nome}</strong> {descreverEntrada(entrada)}
-                </p>
-              )}
-              <span className="historico-data">{formatarData(entrada.criado_em)}</span>
+              <Avatar nome={entrada.usuario_nome} tamanho={24} />
+              <div className="historico-item-corpo">
+                {entrada.tipo === 'comentario' ? (
+                  <p className="historico-comentario">
+                    <strong>{entrada.usuario_nome}:</strong> {entrada.texto}
+                  </p>
+                ) : (
+                  <p className="historico-evento">
+                    <strong>{entrada.usuario_nome}</strong> {descreverEntrada(entrada)}
+                  </p>
+                )}
+                <span className="historico-data">{formatarData(entrada.criado_em)}</span>
+              </div>
             </li>
           ))}
         </ul>

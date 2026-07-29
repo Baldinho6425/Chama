@@ -25,6 +25,13 @@
   --radius: 10px;
   --ease: 160ms cubic-bezier(0.4, 0, 0.2, 1);
 
+  --sidebar-bg: #111827;
+  --sidebar-text: #e5e7eb;
+  --sidebar-text-muted: #9aa1ab;
+  --sidebar-border: #2c313a;
+  --sidebar-field-bg: #1a2130;
+  --sidebar-active-bg: rgba(255, 255, 255, 0.08);
+
   font: 16px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light dark;
   color: var(--text);

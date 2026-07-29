@@ -3,6 +3,7 @@ import { ORDEM_PRIORIDADE, ORDEM_STATUS, PRIORIDADE, STATUS } from '../statusDem
 import { formatarData } from '../formatarData'
 import SelecionarSala from './SelecionarSala'
 import Historico from './Historico'
+import Avatar from './Avatar'
 
 export default function DemandaItem({
   demanda,
@@ -106,7 +107,7 @@ export default function DemandaItem({
   }
 
   return (
-    <li className="demanda-card">
+    <li className={`demanda-card demanda-card-${demanda.prioridade ?? 'normal'}`}>
       <div className="demanda-card-topo">
         <span className="demanda-local">
           Bloco {demanda.bloco} · Sala {demanda.sala}
@@ -121,12 +122,23 @@ export default function DemandaItem({
 
       <p className="demanda-observacoes">{demanda.observacoes}</p>
 
+      <div className="demanda-card-pessoas">
+        {demanda.criado_por_nome && (
+          <span className="demanda-pessoa">
+            <Avatar nome={demanda.criado_por_nome} tamanho={22} />
+            Aberto por {demanda.criado_por_nome}
+          </span>
+        )}
+        {demanda.responsavel_nome && (
+          <span className="demanda-pessoa">
+            <Avatar nome={demanda.responsavel_nome} tamanho={22} />
+            Responsável: {demanda.responsavel_nome}
+          </span>
+        )}
+      </div>
+
       <div className="demanda-card-rodape">
-        <span className="demanda-data">
-          Criada em {formatarData(demanda.criado_em)}
-          {demanda.criado_por_nome ? ` por ${demanda.criado_por_nome}` : ''}
-          {demanda.responsavel_nome ? ` · Responsável: ${demanda.responsavel_nome}` : ''}
-        </span>
+        <span className="demanda-data">Criada em {formatarData(demanda.criado_em)}</span>
 
         <div className="demanda-acoes">
           <select
