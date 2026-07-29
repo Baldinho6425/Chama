@@ -28,3 +28,4 @@ dev.err.log
 *.sw?
 
 .vercel
+.env*

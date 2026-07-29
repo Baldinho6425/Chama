@@ -234,12 +234,6 @@ function AppAutenticado({ usuario, onSair }) {
               </div>
 
               <div className="filtros">
-                <button
-                  className={filtro === 'todas' ? 'ativo' : ''}
-                  onClick={() => setFiltro('todas')}
-                >
-                  Todas
-                </button>
                 {ORDEM_STATUS.map((status) => (
                   <button
                     key={status}
@@ -249,6 +243,12 @@ function AppAutenticado({ usuario, onSair }) {
                     {STATUS[status].rotulo}
                   </button>
                 ))}
+                <button
+                  className={filtro === 'todas' ? 'ativo' : ''}
+                  onClick={() => setFiltro('todas')}
+                >
+                  Todas
+                </button>
               </div>
 
               <DemandaList
