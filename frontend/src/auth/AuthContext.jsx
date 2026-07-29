@@ -27,9 +27,9 @@ export function AuthProvider({ children }) {
     restaurarSessao()
   }, [])
 
-  async function entrar(email, senha) {
+  async function entrar(email, senha, lembrar = true) {
     const { usuario, token } = await api.login({ email, senha })
-    api.setToken(token)
+    api.setToken(token, lembrar)
     setUsuario(usuario)
   }
 

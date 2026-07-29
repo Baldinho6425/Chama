@@ -2,12 +2,15 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api'
 const TOKEN_KEY = 'chama_token'
 
 export function getToken() {
-  return localStorage.getItem(TOKEN_KEY)
+  return localStorage.getItem(TOKEN_KEY) ?? sessionStorage.getItem(TOKEN_KEY)
 }
 
-export function setToken(token) {
-  if (token) localStorage.setItem(TOKEN_KEY, token)
-  else localStorage.removeItem(TOKEN_KEY)
+export function setToken(token, lembrar = true) {
+  localStorage.removeItem(TOKEN_KEY)
+  sessionStorage.removeItem(TOKEN_KEY)
+  if (token) {
+    ;(lembrar ? localStorage : sessionStorage).setItem(TOKEN_KEY, token)
+  }
 }
 
 async function request(path, options = {}) {
