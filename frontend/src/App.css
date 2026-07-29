@@ -145,6 +145,11 @@
   font-size: 14px;
 }
 
+.mensagem-sucesso {
+  color: var(--concluida-text);
+  font-size: 14px;
+}
+
 /* Edição inline */
 
 .demanda-form-edicao {

@@ -24,6 +24,8 @@ export async function initSchema() {
 
     ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS papel TEXT NOT NULL DEFAULT 'comum';
     ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ativo BOOLEAN NOT NULL DEFAULT true;
+    ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS reset_token TEXT;
+    ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS reset_token_expira TIMESTAMPTZ;
 
     CREATE TABLE IF NOT EXISTS salas (
       id SERIAL PRIMARY KEY,

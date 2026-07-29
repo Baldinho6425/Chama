@@ -6,6 +6,7 @@ import SalasManager from './components/SalasManager'
 import Dashboard from './components/Dashboard'
 import UsuariosManager from './components/UsuariosManager'
 import Login from './pages/Login'
+import RedefinirSenha from './pages/RedefinirSenha'
 import {
   atualizarDemanda,
   criarDemanda,
@@ -37,6 +38,11 @@ const ORDENACOES = [
 
 export default function App() {
   const { usuario, carregando: carregandoSessao, sair } = useAuth()
+  const tokenReset = new URLSearchParams(window.location.search).get('redefinir')
+
+  if (tokenReset) {
+    return <RedefinirSenha token={tokenReset} />
+  }
 
   if (carregandoSessao) {
     return <p className="mensagem-vazia">Carregando…</p>

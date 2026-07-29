@@ -1,8 +1,18 @@
 import { Router } from "express";
+import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { gerarToken } from "../auth.js";
-import { buscarPorEmail, buscarPorId, criarUsuario, paraPublico } from "../usersStore.js";
+import {
+  buscarPorEmail,
+  buscarPorId,
+  buscarPorTokenReset,
+  criarUsuario,
+  paraPublico,
+  redefinirSenha,
+  salvarTokenReset,
+} from "../usersStore.js";
 import { requireAuth } from "../middleware/requireAuth.js";
+import { enviarEmail } from "../email.js";
 
 export const authRouter = Router();
 
@@ -48,6 +58,63 @@ authRouter.post("/login", async (req, res) => {
 
   const token = gerarToken(usuario);
   res.json({ usuario: paraPublico(usuario), token });
+});
+
+authRouter.post("/esqueci-senha", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email?.trim()) {
+    return res.status(400).json({ erro: "email é obrigatório" });
+  }
+
+  const usuario = await buscarPorEmail(email);
+
+  if (usuario) {
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiraEm = new Date(Date.now() + 60 * 60 * 1000);
+    await salvarTokenReset(usuario.email, token, expiraEm);
+
+    const link = `${process.env.FRONTEND_URL}/?redefinir=${token}`;
+
+    try {
+      await enviarEmail({
+        to: usuario.email,
+        subject: "Redefinir senha - Chama",
+        html: `
+          <p>Você pediu para redefinir sua senha no Chama.</p>
+          <p><a href="${link}">Clique aqui para escolher uma nova senha</a></p>
+          <p>Esse link expira em 1 hora. Se não foi você, pode ignorar este email.</p>
+        `,
+      });
+    } catch (err) {
+      console.error("Erro ao enviar email de redefinição:", err.message);
+    }
+  }
+
+  res.json({ ok: true, mensagem: "Se esse email existir, enviamos um link de redefinição." });
+});
+
+authRouter.post("/redefinir-senha", async (req, res) => {
+  const { token, novaSenha } = req.body;
+
+  if (!token || !novaSenha) {
+    return res.status(400).json({ erro: "token e novaSenha são obrigatórios" });
+  }
+
+  if (novaSenha.length < 6) {
+    return res.status(400).json({ erro: "senha deve ter pelo menos 6 caracteres" });
+  }
+
+  const usuario = await buscarPorTokenReset(token);
+
+  if (!usuario) {
+    return res.status(400).json({ erro: "link inválido ou expirado" });
+  }
+
+  const senhaHash = await bcrypt.hash(novaSenha, 10);
+  await redefinirSenha(usuario.id, senhaHash);
+
+  res.json({ ok: true });
 });
 
 authRouter.get("/me", requireAuth, async (req, res) => {

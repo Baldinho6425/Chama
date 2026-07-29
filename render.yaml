@@ -7,6 +7,12 @@ services:
     buildCommand: npm install
     startCommand: npm start
     envVars:
+      - key: CORS_ORIGIN
+        value: https://frontend-teal-beta-23.vercel.app
+      - key: FRONTEND_URL
+        value: https://frontend-teal-beta-23.vercel.app
+      - key: RESEND_API_KEY
+        sync: false
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET

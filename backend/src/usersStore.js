@@ -1,7 +1,7 @@
 import { pool } from "./db.js";
 
 function paraPublico(usuario) {
-  const { senha_hash, ...publico } = usuario;
+  const { senha_hash, reset_token, reset_token_expira, ...publico } = usuario;
   return publico;
 }
 
@@ -44,6 +44,28 @@ export async function atualizarUsuario(id, { papel, ativo }) {
     [papel ?? atual.papel, ativo ?? atual.ativo, Number(id)]
   );
   return paraPublico(rows[0]);
+}
+
+export async function salvarTokenReset(email, token, expiraEm) {
+  await pool.query(
+    "UPDATE usuarios SET reset_token = $1, reset_token_expira = $2 WHERE email = $3",
+    [token, expiraEm, email.toLowerCase()]
+  );
+}
+
+export async function buscarPorTokenReset(token) {
+  const { rows } = await pool.query(
+    "SELECT * FROM usuarios WHERE reset_token = $1 AND reset_token_expira > now()",
+    [token]
+  );
+  return rows[0];
+}
+
+export async function redefinirSenha(id, senhaHash) {
+  await pool.query(
+    "UPDATE usuarios SET senha_hash = $1, reset_token = NULL, reset_token_expira = NULL WHERE id = $2",
+    [senhaHash, Number(id)]
+  );
 }
 
 export { paraPublico };

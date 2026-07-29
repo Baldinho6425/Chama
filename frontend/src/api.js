@@ -44,6 +44,17 @@ export function buscarUsuarioAtual() {
   return request('/auth/me')
 }
 
+export function esqueciSenha(email) {
+  return request('/auth/esqueci-senha', { method: 'POST', body: JSON.stringify({ email }) })
+}
+
+export function redefinirSenha(token, novaSenha) {
+  return request('/auth/redefinir-senha', {
+    method: 'POST',
+    body: JSON.stringify({ token, novaSenha }),
+  })
+}
+
 // Demandas
 
 export function listarDemandas(status) {
