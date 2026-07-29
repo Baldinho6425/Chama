@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import DemandaForm from './components/DemandaForm'
 import DemandaList from './components/DemandaList'
@@ -13,6 +13,7 @@ import {
   excluirSala,
   listarDemandas,
   listarSalas,
+  listarUsuarios,
 } from './api'
 import { ORDEM_STATUS, STATUS } from './statusDemanda'
 import { useAuth } from './auth/AuthContext'
@@ -22,6 +23,15 @@ const ABAS = [
   { id: 'demandas', rotulo: 'Demandas' },
   { id: 'salas', rotulo: 'Salas' },
   { id: 'painel', rotulo: 'Painel' },
+]
+
+const RANK_PRIORIDADE = { urgente: 0, normal: 1, baixa: 2 }
+
+const ORDENACOES = [
+  { id: 'recente', rotulo: 'Mais recente' },
+  { id: 'antiga', rotulo: 'Mais antiga' },
+  { id: 'prioridade', rotulo: 'Prioridade' },
+  { id: 'bloco', rotulo: 'Bloco' },
 ]
 
 export default function App() {
@@ -42,18 +52,26 @@ function AppAutenticado({ usuario, onSair }) {
   const [aba, setAba] = useState('demandas')
   const [demandas, setDemandas] = useState([])
   const [salas, setSalas] = useState([])
+  const [usuarios, setUsuarios] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
   const [filtro, setFiltro] = useState('todas')
+  const [busca, setBusca] = useState('')
+  const [ordenacao, setOrdenacao] = useState('recente')
   const [statusPush, setStatusPush] = useState('verificando')
 
   async function carregar() {
     setCarregando(true)
     setErro(null)
     try {
-      const [dadosDemandas, dadosSalas] = await Promise.all([listarDemandas(), listarSalas()])
+      const [dadosDemandas, dadosSalas, dadosUsuarios] = await Promise.all([
+        listarDemandas(),
+        listarSalas(),
+        listarUsuarios(),
+      ])
       setDemandas(dadosDemandas)
       setSalas(dadosSalas)
+      setUsuarios(dadosUsuarios)
     } catch (err) {
       setErro(err.message)
     } finally {
@@ -73,6 +91,11 @@ function AppAutenticado({ usuario, onSair }) {
 
   async function handleAtualizarStatus(id, status) {
     const atualizada = await atualizarDemanda(id, { status })
+    setDemandas((atual) => atual.map((d) => (d.id === id ? atualizada : d)))
+  }
+
+  async function handleAtribuirResponsavel(id, responsavelId) {
+    const atualizada = await atualizarDemanda(id, { responsavelId })
     setDemandas((atual) => atual.map((d) => (d.id === id ? atualizada : d)))
   }
 
@@ -107,8 +130,32 @@ function AppAutenticado({ usuario, onSair }) {
     }
   }
 
-  const demandasFiltradas =
-    filtro === 'todas' ? demandas : demandas.filter((d) => d.status === filtro)
+  const demandasFiltradas = useMemo(() => {
+    const buscaNormalizada = busca.trim().toLowerCase()
+
+    return demandas
+      .filter((d) => filtro === 'todas' || d.status === filtro)
+      .filter((d) => {
+        if (!buscaNormalizada) return true
+        const alvo = `${d.bloco} ${d.sala} ${d.observacoes}`.toLowerCase()
+        return alvo.includes(buscaNormalizada)
+      })
+      .sort((a, b) => {
+        switch (ordenacao) {
+          case 'antiga':
+            return a.criado_em.localeCompare(b.criado_em)
+          case 'prioridade':
+            return (
+              RANK_PRIORIDADE[a.prioridade ?? 'normal'] - RANK_PRIORIDADE[b.prioridade ?? 'normal']
+            )
+          case 'bloco':
+            return a.bloco.localeCompare(b.bloco) || a.sala.localeCompare(b.sala)
+          case 'recente':
+          default:
+            return b.criado_em.localeCompare(a.criado_em)
+        }
+      })
+  }, [demandas, filtro, busca, ordenacao])
 
   return (
     <div className="app">
@@ -159,6 +206,23 @@ function AppAutenticado({ usuario, onSair }) {
             <DemandaForm salas={salas} onCriar={handleCriar} />
 
             <section className="secao-lista">
+              <div className="controles-lista">
+                <input
+                  type="search"
+                  className="campo-busca"
+                  placeholder="Buscar por bloco, sala ou observação…"
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                />
+                <select value={ordenacao} onChange={(e) => setOrdenacao(e.target.value)}>
+                  {ORDENACOES.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.rotulo}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="filtros">
                 <button
                   className={filtro === 'todas' ? 'ativo' : ''}
@@ -180,8 +244,10 @@ function AppAutenticado({ usuario, onSair }) {
               <DemandaList
                 demandas={demandasFiltradas}
                 salas={salas}
+                usuarios={usuarios}
                 carregando={carregando}
                 onAtualizarStatus={handleAtualizarStatus}
+                onAtribuirResponsavel={handleAtribuirResponsavel}
                 onEditar={handleEditar}
                 onExcluir={handleExcluir}
               />

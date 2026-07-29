@@ -77,6 +77,25 @@ export function excluirSala(id) {
   return request(`/salas/${id}`, { method: 'DELETE' })
 }
 
+// Usuários
+
+export function listarUsuarios() {
+  return request('/usuarios')
+}
+
+// Histórico
+
+export function listarHistorico(demandaId) {
+  return request(`/demandas/${demandaId}/historico`)
+}
+
+export function adicionarComentario(demandaId, texto) {
+  return request(`/demandas/${demandaId}/historico`, {
+    method: 'POST',
+    body: JSON.stringify({ texto }),
+  })
+}
+
 // Push
 
 export function buscarChavePublicaPush() {

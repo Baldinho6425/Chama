@@ -1,6 +1,15 @@
 import DemandaItem from './DemandaItem'
 
-export default function DemandaList({ demandas, salas, carregando, onAtualizarStatus, onEditar, onExcluir }) {
+export default function DemandaList({
+  demandas,
+  salas,
+  usuarios,
+  carregando,
+  onAtualizarStatus,
+  onAtribuirResponsavel,
+  onEditar,
+  onExcluir,
+}) {
   if (carregando) {
     return <p className="mensagem-vazia">Carregando demandas…</p>
   }
@@ -16,7 +25,9 @@ export default function DemandaList({ demandas, salas, carregando, onAtualizarSt
           key={demanda.id}
           demanda={demanda}
           salas={salas}
+          usuarios={usuarios}
           onAtualizarStatus={onAtualizarStatus}
+          onAtribuirResponsavel={onAtribuirResponsavel}
           onEditar={onEditar}
           onExcluir={onExcluir}
         />

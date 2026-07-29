@@ -47,6 +47,8 @@ export function createDemanda({ bloco, sala, observacoes, prioridade, criadoPor 
     status: "pendente",
     criado_por_id: criadoPor.id,
     criado_por_nome: criadoPor.nome,
+    responsavel_id: null,
+    responsavel_nome: null,
     criado_em: agora,
     atualizado_em: agora,
   };
@@ -69,6 +71,8 @@ export function updateDemanda(id, campos) {
     observacoes: campos.observacoes ?? atual.observacoes,
     prioridade: campos.prioridade ?? atual.prioridade,
     status: campos.status ?? atual.status,
+    responsavel_id: "responsavelId" in campos ? campos.responsavelId : atual.responsavel_id,
+    responsavel_nome: "responsavelId" in campos ? campos.responsavelNome : atual.responsavel_nome,
     atualizado_em: timestamp(),
   };
 

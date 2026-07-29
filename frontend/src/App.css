@@ -40,7 +40,7 @@
   border: 1px solid var(--primary);
   background: transparent;
   color: var(--primary);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 8px 14px;
   cursor: pointer;
   font-size: 13px;
@@ -49,6 +49,8 @@
 .botao-notificacoes:hover {
   background: var(--primary);
   color: #fff;
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
 .mensagem-aviso {
@@ -68,7 +70,8 @@
 .demanda-form {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -104,7 +107,7 @@
 .campo select,
 .demanda-acoes select {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 10px 12px;
   background: var(--bg);
   color: var(--text);
@@ -119,14 +122,17 @@
   background: var(--primary);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 10px 20px;
   cursor: pointer;
   font-weight: 600;
+  box-shadow: var(--shadow-sm);
 }
 
-.demanda-form button[type='submit']:hover {
+.demanda-form button[type='submit']:hover:not(:disabled) {
   background: var(--primary-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .demanda-form button[type='submit']:disabled {
@@ -151,10 +157,17 @@
   background: var(--primary);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 8px 16px;
   cursor: pointer;
   font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+.demanda-form-edicao button[type='submit']:hover:not(:disabled) {
+  background: var(--primary-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .demanda-form-edicao button[type='submit']:disabled {
@@ -166,7 +179,7 @@
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 8px 12px;
   cursor: pointer;
   font-size: 13px;
@@ -174,9 +187,36 @@
 
 .botao-secundario:hover {
   background: var(--bg);
+  border-color: var(--text-muted);
+  transform: translateY(-1px);
 }
 
 /* Filtros */
+
+.controles-lista {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.campo-busca {
+  flex: 1;
+  min-width: 180px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.controles-lista select {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  background: var(--surface);
+  color: var(--text);
+}
 
 .filtros {
   display: flex;
@@ -195,10 +235,16 @@
   font-size: 14px;
 }
 
+.filtros button:hover:not(.ativo) {
+  border-color: var(--text-muted);
+  transform: translateY(-1px);
+}
+
 .filtros button.ativo {
   background: var(--primary);
   border-color: var(--primary);
   color: #fff;
+  box-shadow: var(--shadow-sm);
 }
 
 /* Lista */
@@ -218,14 +264,34 @@
   gap: 12px;
 }
 
+@keyframes entrada-suave {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .demanda-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--ease), transform var(--ease), border-color var(--ease);
+  animation: entrada-suave 0.28s ease;
+}
+
+.demanda-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
 }
 
 .demanda-card-topo {
@@ -308,13 +374,14 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .botao-excluir {
   border: 1px solid var(--danger);
   background: transparent;
   color: var(--danger);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 8px 12px;
   cursor: pointer;
   font-size: 13px;
@@ -323,6 +390,112 @@
 .botao-excluir:hover {
   background: var(--danger);
   color: #fff;
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+/* Histórico */
+
+.botao-historico {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 0;
+  margin-top: 4px;
+}
+
+.botao-historico:hover {
+  text-decoration: underline;
+}
+
+.historico {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: entrada-suave 0.2s ease;
+}
+
+.historico-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.historico-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.historico-evento,
+.historico-comentario {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.historico-comentario {
+  color: var(--text);
+}
+
+.historico-comentario strong,
+.historico-evento strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.historico-data {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.historico-form {
+  display: flex;
+  gap: 8px;
+}
+
+.historico-form input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.historico-form button {
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.historico-form button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.historico-form button:hover:not(:disabled) {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
 @media (min-width: 640px) {
@@ -346,11 +519,13 @@
   max-width: 360px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
   padding: 28px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  animation: entrada-suave 0.3s ease;
 }
 
 .login-card h1 {
@@ -370,14 +545,17 @@
   background: var(--primary);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 10px 20px;
   cursor: pointer;
   font-weight: 600;
+  box-shadow: var(--shadow-sm);
 }
 
-.login-card button[type='submit']:hover {
+.login-card button[type='submit']:hover:not(:disabled) {
   background: var(--primary-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .login-card button[type='submit']:disabled {
@@ -414,6 +592,10 @@
   border-bottom: 2px solid transparent;
 }
 
+.abas button:hover:not(.ativo) {
+  color: var(--text);
+}
+
 .abas button.ativo {
   color: var(--primary);
   border-bottom-color: var(--primary);
@@ -436,8 +618,10 @@
 .salas-grupo {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
   padding: 16px;
+  animation: entrada-suave 0.25s ease;
 }
 
 .salas-grupo h3 {
@@ -480,6 +664,7 @@
 .salas-lista button:hover {
   background: var(--danger);
   color: #fff;
+  transform: scale(1.1);
 }
 
 /* Painel */
@@ -499,11 +684,19 @@
 .stat-tile {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  transition: box-shadow var(--ease), transform var(--ease);
+  animation: entrada-suave 0.25s ease;
+}
+
+.stat-tile:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .stat-valor {
@@ -526,8 +719,10 @@
 .painel-secao {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
   padding: 16px;
+  animation: entrada-suave 0.3s ease;
 }
 
 .painel-secao h3 {
@@ -577,6 +772,7 @@
   height: 100%;
   border-radius: 999px;
   min-width: 4px;
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .painel-barra-valor {

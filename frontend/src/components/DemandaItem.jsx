@@ -1,18 +1,20 @@
 import { useState } from 'react'
 import { ORDEM_PRIORIDADE, ORDEM_STATUS, PRIORIDADE, STATUS } from '../statusDemanda'
+import { formatarData } from '../formatarData'
 import SelecionarSala from './SelecionarSala'
+import Historico from './Historico'
 
-function formatarData(iso) {
-  return new Date(iso).toLocaleString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-export default function DemandaItem({ demanda, salas, onAtualizarStatus, onEditar, onExcluir }) {
+export default function DemandaItem({
+  demanda,
+  salas,
+  usuarios,
+  onAtualizarStatus,
+  onAtribuirResponsavel,
+  onEditar,
+  onExcluir,
+}) {
   const [editando, setEditando] = useState(false)
+  const [historicoAberto, setHistoricoAberto] = useState(false)
   const [campos, setCampos] = useState({
     bloco: demanda.bloco,
     sala: demanda.sala,
@@ -123,6 +125,7 @@ export default function DemandaItem({ demanda, salas, onAtualizarStatus, onEdita
         <span className="demanda-data">
           Criada em {formatarData(demanda.criado_em)}
           {demanda.criado_por_nome ? ` por ${demanda.criado_por_nome}` : ''}
+          {demanda.responsavel_nome ? ` · Responsável: ${demanda.responsavel_nome}` : ''}
         </span>
 
         <div className="demanda-acoes">
@@ -136,6 +139,19 @@ export default function DemandaItem({ demanda, salas, onAtualizarStatus, onEdita
               </option>
             ))}
           </select>
+          <select
+            value={demanda.responsavel_id ?? ''}
+            onChange={(e) =>
+              onAtribuirResponsavel(demanda.id, e.target.value ? Number(e.target.value) : null)
+            }
+          >
+            <option value="">Sem responsável</option>
+            {usuarios.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nome}
+              </option>
+            ))}
+          </select>
           <button type="button" className="botao-secundario" onClick={() => setEditando(true)}>
             Editar
           </button>
@@ -144,6 +160,16 @@ export default function DemandaItem({ demanda, salas, onAtualizarStatus, onEdita
           </button>
         </div>
       </div>
+
+      <button
+        type="button"
+        className="botao-historico"
+        onClick={() => setHistoricoAberto((atual) => !atual)}
+      >
+        {historicoAberto ? 'Ocultar histórico' : 'Ver histórico'}
+      </button>
+
+      {historicoAberto && <Historico demandaId={demanda.id} />}
     </li>
   )
 }
