@@ -1,8 +1,8 @@
 # Chama
 
-App para cadastro e acompanhamento de demandas de TI, organizadas por sala (Bloco + Sala) com um campo de observações descrevendo o que precisa ser feito. Tem login individual, prioridade, edição de demandas e notificação push quando uma nova demanda é cadastrada.
+App para cadastro e acompanhamento de demandas de TI, organizadas por sala (Bloco + Sala) com um campo de observações descrevendo o que precisa ser feito. Tem login individual (com aprovação de cadastro por um supervisor), prioridade, edição de demandas, histórico/comentários por demanda e notificação push quando uma nova demanda é cadastrada.
 
-Funciona pelo navegador (celular ou desktop) e pode ser instalado como app (PWA).
+Funciona pelo navegador (celular ou desktop) e pode ser instalado como app (PWA). Layout com navegação por abas + sidebar no desktop, e barra de navegação inferior no mobile.
 
 **App no ar:** https://frontend-teal-beta-23.vercel.app
 
@@ -52,23 +52,31 @@ Para instalar como app no celular: acesse a URL do frontend pelo navegador (Chro
 
 Cada pessoa cria sua própria conta (nome, email, senha) na primeira vez que acessa — a demanda guarda quem a criou.
 
+**Sala de espera:** toda conta nova nasce com `status_cadastro = pendente` e não consegue logar até um supervisor aprovar. Se tentar entrar antes da aprovação, recebe uma mensagem explicando que o cadastro está aguardando análise. Se o supervisor recusar, a mensagem avisa que o acesso foi negado (a conta continua visível pro supervisor, que pode reverter e aprovar depois se mudar de ideia).
+
 Toda conta nasce com papel `comum`. Um **supervisor** (promovido diretamente no banco a primeira vez, depois pela própria aba "Usuários") tem acesso extra a:
-- Aba "Usuários": promover/rebaixar outras contas e ativar/inativar (usuário inativo não consegue logar — inclusive sessões já abertas são cortadas na próxima requisição — e some da lista de "atribuir responsável").
+- Uma seção "Solicitações pendentes" no topo da aba "Usuários", com botões Aprovar/Recusar — a aba mostra um contador em vermelho com a quantidade de pedidos esperando.
+- Promover/rebaixar outras contas e ativar/inativar (usuário inativo não consegue logar — inclusive sessões já abertas são cortadas na próxima requisição — e some da lista de "atribuir responsável").
 - Um supervisor não consegue se auto-inativar nem se auto-rebaixar, pra evitar ficar sem acesso por engano.
 
 O Painel de estatísticas continua visível para todos os usuários, não só supervisores.
 
+**Esqueci minha senha:** a tela de login tem um link para recuperação — envia um email (via [Resend](https://resend.com)) com um link de redefinição válido por 1 hora, uso único. Requer a variável `RESEND_API_KEY` configurada no backend.
+
 ## API
 
-Todas as rotas exigem o header `Authorization: Bearer <token>` (obtido no login), exceto `/api/auth/registrar`, `/api/auth/login` e `/api/push/vapid-public-key`.
+Todas as rotas exigem o header `Authorization: Bearer <token>` (obtido no login), exceto `/api/auth/registrar`, `/api/auth/login`, `/api/auth/esqueci-senha`, `/api/auth/redefinir-senha` e `/api/push/vapid-public-key`.
 
-- `POST /api/auth/registrar` — cria conta (`nome`, `email`, `senha`), retorna `{ usuario, token }`
-- `POST /api/auth/login` — autentica (`email`, `senha`), retorna `{ usuario, token }`
+- `POST /api/auth/registrar` — cria conta (`nome`, `email`, `senha`) com cadastro pendente, retorna `{ usuario, pendente: true }` (sem token — só loga depois de aprovado)
+- `POST /api/auth/login` — autentica (`email`, `senha`), retorna `{ usuario, token }`; bloqueia com 403 se o cadastro estiver pendente, recusado ou inativo
+- `POST /api/auth/esqueci-senha` — envia email de redefinição se o email existir (resposta genérica, não revela se a conta existe)
+- `POST /api/auth/redefinir-senha` — troca a senha usando o token recebido por email (`token`, `novaSenha`)
 - `GET /api/auth/me` — dados do usuário autenticado
-- `GET /api/usuarios` — lista usuários ativos (`id`, `nome`), usado pra atribuir responsável
-- `GET /api/usuarios/gerenciar` — **supervisor**: lista completa de usuários (`papel`, `ativo`, `email`, etc.)
-- `PATCH /api/usuarios/:id` — **supervisor**: atualiza `papel` e/ou `ativo` de um usuário
-- `GET /api/demandas` — lista demandas (aceita `?status=pendente|em_andamento|concluida`)
+- `GET /api/usuarios` — lista usuários ativos e aprovados (`id`, `nome`), usado pra atribuir responsável
+- `GET /api/usuarios/gerenciar` — **supervisor**: lista completa de usuários (`papel`, `ativo`, `status_cadastro`, `email`, etc.)
+- `GET /api/usuarios/pendentes` — **supervisor**: lista só os cadastros aguardando aprovação
+- `PATCH /api/usuarios/:id` — **supervisor**: atualiza `papel`, `ativo` e/ou `statusCadastro` (`aprovado`/`rejeitado`) de um usuário
+- `GET /api/demandas` — lista demandas (aceita `?status=pendente|em_andamento|concluida`), cada item inclui `total_comentarios`
 - `POST /api/demandas` — cria demanda (`bloco`, `sala`, `observacoes`, `prioridade` opcional: baixa/normal/urgente)
 - `PATCH /api/demandas/:id` — edita campos, status, prioridade e/ou `responsavelId` (número ou `null` pra remover)
 - `DELETE /api/demandas/:id` — remove demanda
@@ -93,8 +101,10 @@ Deploy atual:
 
 1. Crie uma conta em [render.com](https://render.com) e conecte seu GitHub.
 2. "New" → "Blueprint" → selecione o repositório `Chama`. O Render lê o `render.yaml` da raiz e configura o serviço `chama-backend` automaticamente (`rootDir: backend`).
-3. Preencha as variáveis de ambiente pedidas: `DATABASE_URL` (connection string do Neon/Postgres), `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (gere as chaves como descrito acima). `JWT_SECRET` é gerado automaticamente.
+3. Preencha as variáveis de ambiente pedidas: `DATABASE_URL` (connection string do Neon/Postgres), `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (gere as chaves como descrito acima), `RESEND_API_KEY` (para o email de redefinição de senha). `JWT_SECRET` é gerado automaticamente. `CORS_ORIGIN` e `FRONTEND_URL` já vêm preenchidos no `render.yaml` apontando pro frontend na Vercel.
 4. Depois do deploy, anote a URL pública (algo como `https://chama-backend.onrender.com`).
+
+> **Atenção:** variáveis marcadas `sync: false` no `render.yaml` (como `DATABASE_URL` e `RESEND_API_KEY`) não bloqueiam nem avisam se ficarem vazias — o deploy novo simplesmente falha ao iniciar e o Render continua servindo a versão anterior, o que pode parecer que "está tudo bem" por um tempo. Depois de adicionar uma variável nova ao Blueprint, sempre confira no painel do Render se ela foi preenchida.
 
 > **Atenção:** no plano free do Render, o serviço "dorme" após 15 min sem uso (a próxima requisição demora ~30-50s pra acordar). Isso não afeta mais os dados — com o Postgres, eles ficam salvos independente do Render dormir ou reiniciar.
 
@@ -106,7 +116,6 @@ Deploy atual:
 
 ## Próximos passos sugeridos
 
-- Restringir o CORS ao domínio do frontend (hoje aceita qualquer origem)
-- Fluxo de recuperação de senha
 - Anexar foto na demanda
 - Exportar demandas em CSV
+- Campo de "Título" separado das observações
