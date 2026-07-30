@@ -1,11 +1,17 @@
 import { pool } from "./db.js";
 
 export async function listDemandas(status) {
+  const base = `
+    SELECT d.*, COUNT(h.id) FILTER (WHERE h.tipo = 'comentario')::int AS total_comentarios
+    FROM demandas d
+    LEFT JOIN historico h ON h.demanda_id = d.id
+  `;
+
   const { rows } = status
-    ? await pool.query("SELECT * FROM demandas WHERE status = $1 ORDER BY criado_em DESC", [
+    ? await pool.query(`${base} WHERE d.status = $1 GROUP BY d.id ORDER BY d.criado_em DESC`, [
         status,
       ])
-    : await pool.query("SELECT * FROM demandas ORDER BY criado_em DESC");
+    : await pool.query(`${base} GROUP BY d.id ORDER BY d.criado_em DESC`);
   return rows;
 }
 

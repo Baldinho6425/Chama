@@ -1,9 +1,74 @@
 import { useState } from 'react'
 import { ORDEM_PRIORIDADE, ORDEM_STATUS, PRIORIDADE, STATUS } from '../statusDemanda'
-import { formatarData } from '../formatarData'
+import { tempoRelativo } from '../formatarData'
+import { IconeComentario, IconeMais, IconePorta, IconePredio } from './Icons'
 import SelecionarSala from './SelecionarSala'
 import Historico from './Historico'
 import Avatar from './Avatar'
+
+function MenuAcoes({ demanda, usuarios, onAtribuirResponsavel, onEditar, onExcluir }) {
+  const [aberto, setAberto] = useState(false)
+
+  function fechar(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) setAberto(false)
+  }
+
+  return (
+    <div className="menu-acoes" onBlur={fechar}>
+      <button
+        type="button"
+        className="botao-menu"
+        onClick={() => setAberto((a) => !a)}
+        aria-label="Mais ações"
+      >
+        <IconeMais />
+      </button>
+
+      {aberto && (
+        <div className="menu-acoes-dropdown">
+          <label className="menu-acoes-rotulo" htmlFor={`responsavel-${demanda.id}`}>
+            Responsável
+          </label>
+          <select
+            id={`responsavel-${demanda.id}`}
+            value={demanda.responsavel_id ?? ''}
+            onChange={(e) => {
+              onAtribuirResponsavel(e.target.value ? Number(e.target.value) : null)
+              setAberto(false)
+            }}
+          >
+            <option value="">Sem responsável</option>
+            {usuarios.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nome}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => {
+              setAberto(false)
+              onEditar()
+            }}
+          >
+            Editar
+          </button>
+          <button
+            type="button"
+            className="menu-acoes-excluir"
+            onClick={() => {
+              setAberto(false)
+              onExcluir()
+            }}
+          >
+            Excluir
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function DemandaItem({
   demanda,
@@ -16,6 +81,7 @@ export default function DemandaItem({
 }) {
   const [editando, setEditando] = useState(false)
   const [historicoAberto, setHistoricoAberto] = useState(false)
+  const [descricaoAberta, setDescricaoAberta] = useState(false)
   const [campos, setCampos] = useState({
     bloco: demanda.bloco,
     sala: demanda.sala,
@@ -106,80 +172,78 @@ export default function DemandaItem({
     )
   }
 
+  const pessoaPrincipal = demanda.responsavel_nome
+    ? { rotulo: 'Responsável', nome: demanda.responsavel_nome }
+    : demanda.criado_por_nome
+      ? { rotulo: 'Aberto por', nome: demanda.criado_por_nome }
+      : null
+
   return (
     <li className={`demanda-card demanda-card-${demanda.prioridade ?? 'normal'}`}>
       <div className="demanda-card-topo">
-        <span className="demanda-local">
-          Bloco {demanda.bloco} · Sala {demanda.sala}
+        <span className={`status-badge ${STATUS[demanda.status].classe}`}>
+          <span className="status-ponto-inline" />
+          {STATUS[demanda.status].rotulo}
         </span>
-        <div className="demanda-badges">
-          <span className={`prioridade-badge ${prioridade.classe}`}>{prioridade.rotulo}</span>
-          <span className={`status-badge ${STATUS[demanda.status].classe}`}>
-            {STATUS[demanda.status].rotulo}
+        <span className="demanda-tempo">{tempoRelativo(demanda.criado_em)}</span>
+      </div>
+
+      <p
+        className="demanda-titulo"
+        onClick={() => setDescricaoAberta((a) => !a)}
+        role="button"
+        tabIndex={0}
+      >
+        {demanda.observacoes}
+      </p>
+      {descricaoAberta && <p className="demanda-observacoes">{demanda.observacoes}</p>}
+
+      <div className="demanda-card-meta">
+        <span className="demanda-local">
+          <IconePredio /> Bloco {demanda.bloco} <span className="demanda-local-sep">·</span>{' '}
+          <IconePorta /> Sala {demanda.sala}
+        </span>
+        <span className={`prioridade-badge ${prioridade.classe}`}>{prioridade.rotulo}</span>
+      </div>
+
+      {pessoaPrincipal && (
+        <div className="demanda-card-pessoas">
+          <span className="demanda-pessoa">
+            <Avatar nome={pessoaPrincipal.nome} tamanho={22} />
+            {pessoaPrincipal.rotulo}: {pessoaPrincipal.nome}
           </span>
         </div>
-      </div>
-
-      <p className="demanda-observacoes">{demanda.observacoes}</p>
-
-      <div className="demanda-card-pessoas">
-        {demanda.criado_por_nome && (
-          <span className="demanda-pessoa">
-            <Avatar nome={demanda.criado_por_nome} tamanho={22} />
-            Aberto por {demanda.criado_por_nome}
-          </span>
-        )}
-        {demanda.responsavel_nome && (
-          <span className="demanda-pessoa">
-            <Avatar nome={demanda.responsavel_nome} tamanho={22} />
-            Responsável: {demanda.responsavel_nome}
-          </span>
-        )}
-      </div>
+      )}
 
       <div className="demanda-card-rodape">
-        <span className="demanda-data">Criada em {formatarData(demanda.criado_em)}</span>
+        <button
+          type="button"
+          className="botao-comentarios"
+          onClick={() => setHistoricoAberto((atual) => !atual)}
+        >
+          <IconeComentario /> {demanda.total_comentarios ?? 0}
+        </button>
 
-        <div className="demanda-acoes">
-          <select
-            value={demanda.status}
-            onChange={(e) => onAtualizarStatus(demanda.id, e.target.value)}
-          >
-            {ORDEM_STATUS.map((status) => (
-              <option key={status} value={status}>
-                {STATUS[status].rotulo}
-              </option>
-            ))}
-          </select>
-          <select
-            value={demanda.responsavel_id ?? ''}
-            onChange={(e) =>
-              onAtribuirResponsavel(demanda.id, e.target.value ? Number(e.target.value) : null)
-            }
-          >
-            <option value="">Sem responsável</option>
-            {usuarios.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.nome}
-              </option>
-            ))}
-          </select>
-          <button type="button" className="botao-secundario" onClick={() => setEditando(true)}>
-            Editar
-          </button>
-          <button type="button" className="botao-excluir" onClick={() => onExcluir(demanda.id)}>
-            Excluir
-          </button>
-        </div>
+        <select
+          className={`select-status ${STATUS[demanda.status].classe}`}
+          value={demanda.status}
+          onChange={(e) => onAtualizarStatus(demanda.id, e.target.value)}
+        >
+          {ORDEM_STATUS.map((status) => (
+            <option key={status} value={status}>
+              {STATUS[status].rotulo}
+            </option>
+          ))}
+        </select>
+
+        <MenuAcoes
+          demanda={demanda}
+          usuarios={usuarios}
+          onAtribuirResponsavel={(id) => onAtribuirResponsavel(demanda.id, id)}
+          onEditar={() => setEditando(true)}
+          onExcluir={() => onExcluir(demanda.id)}
+        />
       </div>
-
-      <button
-        type="button"
-        className="botao-historico"
-        onClick={() => setHistoricoAberto((atual) => !atual)}
-      >
-        {historicoAberto ? 'Ocultar histórico' : 'Ver histórico'}
-      </button>
 
       {historicoAberto && <Historico demandaId={demanda.id} />}
     </li>

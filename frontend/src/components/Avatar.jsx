@@ -12,21 +12,24 @@ function iniciais(nome) {
   return (primeira + ultima).toUpperCase()
 }
 
-export default function Avatar({ nome, tamanho = 28 }) {
+export default function Avatar({ nome, tamanho = 28, online = false }) {
   if (!nome) return null
 
   return (
-    <span
-      className="avatar"
-      style={{
-        width: tamanho,
-        height: tamanho,
-        fontSize: Math.max(10, tamanho * 0.4),
-        background: corPara(nome),
-      }}
-      title={nome}
-    >
-      {iniciais(nome)}
+    <span className="avatar-wrapper" style={{ width: tamanho, height: tamanho }}>
+      <span
+        className="avatar"
+        style={{
+          width: tamanho,
+          height: tamanho,
+          fontSize: Math.max(10, tamanho * 0.4),
+          background: corPara(nome),
+        }}
+        title={nome}
+      >
+        {iniciais(nome)}
+      </span>
+      {online && <span className="avatar-online" />}
     </span>
   )
 }

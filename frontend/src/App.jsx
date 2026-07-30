@@ -6,6 +6,7 @@ import SalasManager from './components/SalasManager'
 import Dashboard from './components/Dashboard'
 import UsuariosManager from './components/UsuariosManager'
 import Avatar from './components/Avatar'
+import { IconeGrafico, IconeLista, IconeMenu, IconePessoas, IconePredio, IconeSino } from './components/Icons'
 import Login from './pages/Login'
 import RedefinirSenha from './pages/RedefinirSenha'
 import {
@@ -39,6 +40,13 @@ const ORDENACOES = [
 ]
 
 const ITENS_POR_PAGINA = 6
+
+const ICONES_ABA = {
+  demandas: IconeLista,
+  salas: IconePredio,
+  painel: IconeGrafico,
+  usuarios: IconePessoas,
+}
 
 export default function App() {
   const { usuario, carregando: carregandoSessao, sair } = useAuth()
@@ -76,6 +84,7 @@ function AppAutenticado({ usuario, onSair }) {
   const [paginaAtual, setPaginaAtual] = useState(1)
   const [irParaForm, setIrParaForm] = useState(false)
   const [pendentesCount, setPendentesCount] = useState(0)
+  const [menuContaAberto, setMenuContaAberto] = useState(false)
   const formRef = useRef(null)
 
   async function carregarPendentes() {
@@ -127,6 +136,10 @@ function AppAutenticado({ usuario, onSair }) {
   function handleNovaDemandaClick() {
     setAba('demandas')
     setIrParaForm(true)
+  }
+
+  function handleSinoClick() {
+    if (statusPush === 'inativo') handleAtivarPush()
   }
 
   async function handleCriar(campos) {
@@ -215,6 +228,56 @@ function AppAutenticado({ usuario, onSair }) {
 
   return (
     <div className="app-shell">
+      <header className="topbar-mobile">
+        <button
+          type="button"
+          className="botao-hamburguer"
+          onClick={() => setMenuContaAberto(true)}
+          aria-label="Abrir menu da conta"
+        >
+          <IconeMenu />
+        </button>
+
+        <span className="topbar-mobile-marca">
+          <span aria-hidden="true">🔥</span> Chama
+        </span>
+
+        <div className="topbar-mobile-acoes">
+          <button type="button" className="botao-sino" onClick={handleSinoClick} aria-label="Notificações">
+            <IconeSino />
+            {pendentesCount > 0 && <span className="sino-badge">{pendentesCount}</span>}
+          </button>
+          <button
+            type="button"
+            className="botao-avatar-conta"
+            onClick={() => setMenuContaAberto(true)}
+            aria-label="Abrir menu da conta"
+          >
+            <Avatar nome={usuario.nome} tamanho={34} online />
+          </button>
+        </div>
+      </header>
+
+      {menuContaAberto && (
+        <div className="drawer-fundo" onClick={() => setMenuContaAberto(false)}>
+          <div className="drawer-conta" onClick={(e) => e.stopPropagation()}>
+            <Avatar nome={usuario.nome} tamanho={48} online />
+            <span className="drawer-conta-nome">{usuario.nome}</span>
+            {ehSupervisor && <span className="topbar-usuario-papel">Supervisor</span>}
+            <button
+              type="button"
+              className="botao-secundario"
+              onClick={() => {
+                setMenuContaAberto(false)
+                onSair()
+              }}
+            >
+              Sair
+            </button>
+          </div>
+        </div>
+      )}
+
       <aside className="sidebar">
         <div className="sidebar-marca">
           <span className="sidebar-logo" aria-hidden="true">
@@ -386,6 +449,27 @@ function AppAutenticado({ usuario, onSair }) {
           )}
         </main>
       </div>
+
+      <nav className="bottom-nav">
+        {abas.map((item) => {
+          const Icone = ICONES_ABA[item.id]
+          return (
+            <button
+              key={item.id}
+              className={aba === item.id ? 'ativo' : ''}
+              onClick={() => setAba(item.id)}
+            >
+              <span className="bottom-nav-icone">
+                <Icone />
+                {item.id === 'usuarios' && pendentesCount > 0 && (
+                  <span className="aba-badge aba-badge-bottom">{pendentesCount}</span>
+                )}
+              </span>
+              <span>{item.rotulo}</span>
+            </button>
+          )
+        })}
+      </nav>
     </div>
   )
 }
