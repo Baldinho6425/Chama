@@ -6,12 +6,21 @@ function paraPublico(usuario) {
 }
 
 export async function listarUsuarios() {
-  const { rows } = await pool.query("SELECT * FROM usuarios WHERE ativo = true ORDER BY id");
+  const { rows } = await pool.query(
+    "SELECT * FROM usuarios WHERE ativo = true AND status_cadastro = 'aprovado' ORDER BY id"
+  );
   return rows.map(paraPublico);
 }
 
 export async function listarTodosUsuarios() {
   const { rows } = await pool.query("SELECT * FROM usuarios ORDER BY id");
+  return rows.map(paraPublico);
+}
+
+export async function listarPendentes() {
+  const { rows } = await pool.query(
+    "SELECT * FROM usuarios WHERE status_cadastro = 'pendente' ORDER BY criado_em"
+  );
   return rows.map(paraPublico);
 }
 
@@ -29,19 +38,19 @@ export async function buscarPorId(id) {
 
 export async function criarUsuario({ nome, email, senhaHash }) {
   const { rows } = await pool.query(
-    "INSERT INTO usuarios (nome, email, senha_hash) VALUES ($1, $2, $3) RETURNING *",
+    "INSERT INTO usuarios (nome, email, senha_hash, status_cadastro) VALUES ($1, $2, $3, 'pendente') RETURNING *",
     [nome, email.toLowerCase(), senhaHash]
   );
   return paraPublico(rows[0]);
 }
 
-export async function atualizarUsuario(id, { papel, ativo }) {
+export async function atualizarUsuario(id, { papel, ativo, statusCadastro }) {
   const atual = await buscarPorId(id);
   if (!atual) return null;
 
   const { rows } = await pool.query(
-    "UPDATE usuarios SET papel = $1, ativo = $2 WHERE id = $3 RETURNING *",
-    [papel ?? atual.papel, ativo ?? atual.ativo, Number(id)]
+    "UPDATE usuarios SET papel = $1, ativo = $2, status_cadastro = $3 WHERE id = $4 RETURNING *",
+    [papel ?? atual.papel, ativo ?? atual.ativo, statusCadastro ?? atual.status_cadastro, Number(id)]
   );
   return paraPublico(rows[0]);
 }

@@ -40,6 +40,9 @@ export default function Login() {
         await entrar(campos.email, campos.senha, lembrar)
       } else if (modo === 'registro') {
         await registrar(campos.nome, campos.email, campos.senha)
+        setCampos({ nome: '', email: '', senha: '', confirmacaoSenha: '' })
+        setModo('login')
+        setMensagem('Cadastro enviado! Você poderá entrar assim que um administrador aprovar seu acesso.')
       } else {
         const { mensagem } = await esqueciSenha(campos.email)
         setMensagem(mensagem)

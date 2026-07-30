@@ -22,6 +22,10 @@ export async function requireAuth(req, res, next) {
     return res.status(401).json({ erro: "usuário não encontrado" });
   }
 
+  if (usuario.status_cadastro !== "aprovado") {
+    return res.status(403).json({ erro: "acesso ainda não aprovado" });
+  }
+
   if (!usuario.ativo) {
     return res.status(403).json({ erro: "usuário inativo" });
   }

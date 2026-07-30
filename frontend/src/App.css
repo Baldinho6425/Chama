@@ -874,6 +874,21 @@
   border-bottom-color: var(--primary);
 }
 
+.aba-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 /* Salas */
 
 .secao-salas {
@@ -1158,4 +1173,37 @@
 .usuario-acoes {
   display: flex;
   gap: 8px;
+}
+
+.solicitacoes-bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.solicitacoes-bloco h3,
+.usuarios-titulo-secao {
+  margin: 8px 0 0;
+  font-size: 15px;
+}
+
+.usuario-card-pendente {
+  border-left: 4px solid var(--pendente-text);
+}
+
+.botao-aprovar {
+  border: 1px solid var(--concluida-text);
+  background: transparent;
+  color: var(--concluida-text);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.botao-aprovar:hover {
+  background: var(--concluida-text);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }

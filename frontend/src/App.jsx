@@ -16,6 +16,7 @@ import {
   excluirSala,
   listarDemandas,
   listarSalas,
+  listarSolicitacoesPendentes,
   listarUsuarios,
 } from './api'
 import { ORDEM_STATUS, STATUS } from './statusDemanda'
@@ -74,7 +75,18 @@ function AppAutenticado({ usuario, onSair }) {
   const [statusPush, setStatusPush] = useState('verificando')
   const [paginaAtual, setPaginaAtual] = useState(1)
   const [irParaForm, setIrParaForm] = useState(false)
+  const [pendentesCount, setPendentesCount] = useState(0)
   const formRef = useRef(null)
+
+  async function carregarPendentes() {
+    if (!ehSupervisor) return
+    try {
+      const pendentes = await listarSolicitacoesPendentes()
+      setPendentesCount(pendentes.length)
+    } catch {
+      // não é crítico para o resto do app
+    }
+  }
 
   async function carregar() {
     setCarregando(true)
@@ -97,6 +109,7 @@ function AppAutenticado({ usuario, onSair }) {
 
   useEffect(() => {
     carregar()
+    carregarPendentes()
     statusNotificacoes().then(setStatusPush)
   }, [])
 
@@ -289,6 +302,9 @@ function AppAutenticado({ usuario, onSair }) {
                 onClick={() => setAba(item.id)}
               >
                 {item.rotulo}
+                {item.id === 'usuarios' && pendentesCount > 0 && (
+                  <span className="aba-badge">{pendentesCount}</span>
+                )}
               </button>
             ))}
           </nav>
@@ -365,7 +381,9 @@ function AppAutenticado({ usuario, onSair }) {
 
           {aba === 'painel' && <Dashboard demandas={demandas} />}
 
-          {aba === 'usuarios' && ehSupervisor && <UsuariosManager />}
+          {aba === 'usuarios' && ehSupervisor && (
+            <UsuariosManager onMudarSolicitacoes={carregarPendentes} />
+          )}
         </main>
       </div>
     </div>

@@ -101,6 +101,10 @@ export function listarUsuariosGerenciar() {
   return request('/usuarios/gerenciar')
 }
 
+export function listarSolicitacoesPendentes() {
+  return request('/usuarios/pendentes')
+}
+
 export function atualizarUsuario(id, dados) {
   return request(`/usuarios/${id}`, { method: 'PATCH', body: JSON.stringify(dados) })
 }

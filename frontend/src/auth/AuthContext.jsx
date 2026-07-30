@@ -34,9 +34,7 @@ export function AuthProvider({ children }) {
   }
 
   async function registrar(nome, email, senha) {
-    const { usuario, token } = await api.registrar({ nome, email, senha })
-    api.setToken(token)
-    setUsuario(usuario)
+    return api.registrar({ nome, email, senha })
   }
 
   function sair() {

@@ -33,9 +33,8 @@ authRouter.post("/registrar", async (req, res) => {
 
   const senhaHash = await bcrypt.hash(senha, 10);
   const usuario = await criarUsuario({ nome: nome.trim(), email: email.trim(), senhaHash });
-  const token = gerarToken(usuario);
 
-  res.status(201).json({ usuario, token });
+  res.status(201).json({ usuario, pendente: true });
 });
 
 authRouter.post("/login", async (req, res) => {
@@ -50,6 +49,16 @@ authRouter.post("/login", async (req, res) => {
 
   if (!usuario || !senhaConfere) {
     return res.status(401).json({ erro: "email ou senha inválidos" });
+  }
+
+  if (usuario.status_cadastro === "pendente") {
+    return res
+      .status(403)
+      .json({ erro: "Seu cadastro está aguardando aprovação de um administrador." });
+  }
+
+  if (usuario.status_cadastro === "rejeitado") {
+    return res.status(403).json({ erro: "Seu acesso foi negado por um administrador." });
   }
 
   if (!usuario.ativo) {

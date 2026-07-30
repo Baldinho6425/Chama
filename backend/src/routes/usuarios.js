@@ -1,8 +1,14 @@
 import { Router } from "express";
-import { atualizarUsuario, listarTodosUsuarios, listarUsuarios } from "../usersStore.js";
+import {
+  atualizarUsuario,
+  listarPendentes,
+  listarTodosUsuarios,
+  listarUsuarios,
+} from "../usersStore.js";
 import { requireAuth, requireSupervisor } from "../middleware/requireAuth.js";
 
 const PAPEIS_VALIDOS = ["comum", "supervisor"];
+const STATUS_CADASTRO_VALIDOS = ["aprovado", "rejeitado"];
 
 export const usuariosRouter = Router();
 
@@ -17,8 +23,12 @@ usuariosRouter.get("/gerenciar", requireSupervisor, async (req, res) => {
   res.json(await listarTodosUsuarios());
 });
 
+usuariosRouter.get("/pendentes", requireSupervisor, async (req, res) => {
+  res.json(await listarPendentes());
+});
+
 usuariosRouter.patch("/:id", requireSupervisor, async (req, res) => {
-  const { papel, ativo } = req.body;
+  const { papel, ativo, statusCadastro } = req.body;
 
   if (papel !== undefined && !PAPEIS_VALIDOS.includes(papel)) {
     return res.status(400).json({ erro: `papel inválido, use: ${PAPEIS_VALIDOS.join(", ")}` });
@@ -28,11 +38,17 @@ usuariosRouter.patch("/:id", requireSupervisor, async (req, res) => {
     return res.status(400).json({ erro: "ativo deve ser true ou false" });
   }
 
+  if (statusCadastro !== undefined && !STATUS_CADASTRO_VALIDOS.includes(statusCadastro)) {
+    return res
+      .status(400)
+      .json({ erro: `statusCadastro inválido, use: ${STATUS_CADASTRO_VALIDOS.join(", ")}` });
+  }
+
   if (Number(req.params.id) === req.usuario.id && (ativo === false || papel === "comum")) {
     return res.status(400).json({ erro: "você não pode inativar ou rebaixar sua própria conta" });
   }
 
-  const atualizado = await atualizarUsuario(req.params.id, { papel, ativo });
+  const atualizado = await atualizarUsuario(req.params.id, { papel, ativo, statusCadastro });
 
   if (!atualizado) {
     return res.status(404).json({ erro: "usuário não encontrado" });

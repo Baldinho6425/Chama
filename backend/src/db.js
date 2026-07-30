@@ -26,6 +26,7 @@ export async function initSchema() {
     ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ativo BOOLEAN NOT NULL DEFAULT true;
     ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS reset_token TEXT;
     ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS reset_token_expira TIMESTAMPTZ;
+    ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS status_cadastro TEXT NOT NULL DEFAULT 'aprovado';
 
     CREATE TABLE IF NOT EXISTS salas (
       id SERIAL PRIMARY KEY,
